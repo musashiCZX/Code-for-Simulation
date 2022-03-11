@@ -1,0 +1,840 @@
+---
+title: 
+author: 
+output: 
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+  '# pdf_document': default
+bibliography: meta reference.bib
+nocite: '@*'
+---
+
+```{r,warning = FALSE,message = FALSE,echo=F, include=FALSE}
+#title: "Main Content"
+#author: "Zixuan Chen"
+#date: "2021/07/01"
+#output: 
+#  pdf_document:
+#    latex_engine: xelatex
+#  html_document: default
+#  '# pdf_document': default
+options(tinytex.verbose = TRUE)
+library(metafor)#library(xlsx) # did not load on my computer
+library(tidyverse)
+library(metaviz)
+library(lme4)
+library(nlme)
+library(reshape2)
+
+ctrl <- lmeControl(opt="optim", msMaxIter=100)
+
+
+```
+
+
+```{r,echo = FALSE}
+
+
+## Read the data
+data <- 
+  read.table("C:/books_and_notes/internship and thesis/reproduce project/dataSleepApnea.txt",
+             header=TRUE) # load dataset
+
+
+```
+
+# General Description
+
+The Internship is in the Leiden University Medical Center, the Department of Clinical Epidemiology, which is performed online. The weekly communication with Saskia le Cessis, the supervisor is via MS teams. In addition, all the meetings and course are via online platform due to the COVID-19. 
+
+
+
+# Activities during the Intern
+
+The main aim of the internship is to to get experience as a working statistician at the department of Clinical Epidemiology. Furthermore I prepared for my thesis project. Therefore, most of the tasks in the intern are the knowledge preparation of meta-analysis and interpretation of the ideas in Papadimitropoulou et al's literature[@Papa]. Three main activities during the Internship are:
+
+\textbf{1. The research meetings}
+
+During the internship, weekly meetings in the epidemiology department and the statistics team were conducted via MS teams and Zoom. The main topics are the research process reporting and presentation of the research results. The audience comments on the reports and feedback follows. Participants acquire a sight of the research topic of the lecturer.
+
+\textbf{2. Meta-analysis Course}
+
+Additionally, the internship includes a meta-analysis course for bio-medical researchers. The topics are the searching and selection of the meta-analysis literature, the risk of bias and the assessment. Also, the statistics theories of meta-analysis are illustrated in the course. E.g. the simple basic definition of the meta-analysis, effect size, fixed and random effects models, and the heterogeneity. The programming exercises base on the R tools for meta-analysis. The functions from the package 'metafor', the machine of 'rma', and how to set the arguments in the functions are explained. For the visualization of the results, the forest plot are utilized. Additionally, the interpretation of the output details are demonstrated in a great order. The practice consolidate the application of the meta-analysis tools, e.g. forest plot, functions in the 'metafor' packages. And a mandatory assignment, an editorial of a mata-analysis literature, is included.
+
+\textbf{3. Meta-analysis on the Papadimitropoulou et al's literature}
+
+The main objective of the internship is the reproduction of Papadimitropoulou et al's meta-analysis on the Apnea data, which utilizes the standard meta-analysis methods, Trowman method, and pseudo-IPD methods. The data is the aggregate data of 8 trials with \textcolor{blue}{continuous baseline and follow-up} measures on the treatment group and control group. And the sufficient statistics, the mean, standard deviation, correlation and sample size of each group in each study are provided. 
+
+Base on the aggregate data, we perform the standard meta-analysis with raw mean difference as the measure on the follow-up score and change score. This method offers a standard overview of the treatment effect. We use the forest plot to describe the effect of each trial. 
+
+To compare various meta-analysis methods, the random effect meta-analysis, using linear mixed effect regression models was applied on the pseudo-IPD. We fitted the random effect model on the pseudo-IPD data by setting the follow-up score as the outcome and various structure of dependent variables and random effect. We compare the results and assess the performance as Papadimitropoulou et al's literature[@Papa] did. 
+
+The details of the process will be illustrated in later chapter.
+
+\newpage
+
+# Skills Acquired or Strengthened
+
+\textbf{Meta-analysis}
+
+The Meta-analysis course provides a global overview of meta-analysis on both theories and programming, and the demonstration of the meta-analysis process for both the searching of the literature and the details of synthesis of the results. During the re-analysis project, the general tools in meta-analysis are applied. E.g. The model fitting function, 'rma', the forest plot, and the summary function which is used to extract useful information from the models results. This process consolidates my knowledge of meta-analysis.
+
+
+\textbf{Linear mixed effect regression models}
+
+The linear regression is an important tool since the meta-analysis is base on the theories of linear regression. In the internship, Both the linear regression and the tools in the 'metafor' package are used to perform meta-analysis. For the further research of the pseudo-IPD methods, the exploration of the theories between the standard linear mixed model and the random meta-analysis model is the essential task. Base on the internship reproduction project, I acquire an overview of the relationship between the different tools. 
+
+\textbf{R Programming}
+
+For the whole project, I implement the R codes by reading Papadimitropoulou et al's literature[@Papa] without previewing her codes. Also, the practice of the meta course is implemented completely in R. Hence, I acquire an improvement of R programming skills.
+
+\textbf{Research Sight}
+
+Participating the research meeting provides a sight of statistics researching in the clinical epidemiology field. The statistician can provide an intuitive map for the clinical research by analysing the clinical data. And the statistics tools are widely used in assessing clinical treatment and the effect of drugs.
+
+\textbf{Academic Writing skills}
+
+From the report writing process, my academic writing skills are practiced, which is the essential ability of researching. 
+
+\textbf{Reporting}
+
+I also acquire experience of reporting. For the report of a research project, it is not enough to only make sense for the audience in the particular field. We have to take the researchers who are not familiar with the topic into account as well. Therefore, in the report, we need to involve all people when we illustrate the concept and results. We can acquire an improvement for the interpretation of our research by doing so since the details are under deep consideration. In addition, we have to design a clear logical report structure which can prevent both ourselves, the author, and audience from losing ways. 
+
+
+\newpage
+
+
+# Re-analysis Project
+
+## Introduction
+
+The meta-analysis is the method to synthesis the results of many trials. And offer a summary result to describe the impact of the treatment in the trials. When we perform the narrative review of the journals, many problems may emerge. However, when we apply the meta-analysis to synthesis the outcome of the trials, most of the time we can acquire a more precise result. 
+
+In this project, we perform various meta-analysis methods on the aggregate data of the sleep Apnea in adults patients. The outcome measure is the apnea-hypopnea index(AHI) which indicates the ratio of the total number of apnea or hypopnea events to the total hours of sleep. In all studies, for each patients, the AHI score was measured twice, at the baseline before randomization and follow-up time point. In the aggregate data, the mean, standard deviation , correlation, sample size of the two groups are provided. In each single trial, patients received either the sham device or the continuous positive airway (CPAP) device. Our aim is to estimate the treatment effect of the CPAP device on the sleep recover process by setting the sham device as a reference. The full dataset is comprised in table \ref{table:meta data}.
+
+\begin{table}[]
+\centering
+\begin{tabular}{lllllllll}
+ID & Study    & MeanBaseline & sdBaseline & MeanPostBaseline & sdPostBaseline & NCFB & Correlation & group \\
+\hline
+1  & Egea     & 43.1         & 22.9       & 10.8             & 11.4           & 27   & 0.4979      & 1     \\
+2  & Haensel  & 65.9         & 28.6       & 3.5              & 3.4            & 25   & 0.4981      & 1     \\
+3  & Loredo99 & 56.4         & 24.1       & 3.3              & 3.8            & 23   & 0.4442      & 1     \\
+4  & Mills    & 65           & 34         & 2.56             & 2.4            & 17   & 0.4969      & 1     \\
+5  & Loredo06 & 65.9         & 28.6       & 3.0              & 4.7            & 22   & 0.5704      & 1     \\
+6  & Norman   & 66.1         & 29.1       & 3.4              & 3.0            & 18   & 0.4967      & 1     \\
+7  & Becker   & 62.5         & 17.8       & 3.4              & 3.1            & 16   & 0.5025      & 1     \\
+8  & Spicuzza & 55.3         & 11.9       & 2.1              & 0.3            & 15   & 0.5052      & 1     \\
+1  & Egea     & 35.3         & 16.7       & 28.0             & 24.8           & 29   & 0.4979      & 0     \\
+2  & Haensel  & 57.5         & 32.1       & 53.4             & 32.9           & 25   & 0.4981      & 0     \\
+3  & Loredo99 & 44.2         & 25.3       & 28.3             & 22.7           & 18   & 0.4442      & 0     \\
+4  & Mills    & 61.2         & 41.0       & 57.3             & 41.0           & 16   & 0.4969      & 0     \\
+5  & Loredo06 & 57.5         & 32.1       & 52.5             & 37.5           & 19   & 0.5704      & 0     \\
+6  & Norman   & 53.9         & 29.8       & 50.1             & 32.1           & 15   & 0.4967      & 0     \\
+7  & Becker   & 65.0         & 26.7       & 33.4             & 29.2           & 16   & 0.5025      & 0     \\
+8  & Spicuzza & 59.2         & 17.3       & 57.0             & 8.6            & 10   & 0.5052      & 0   \\ 
+\hline
+\end{tabular}
+\caption{The final Dataset used in Papadimitropoulou's meta-analysis}
+\label{table:meta data}
+\end{table}
+
+The NCFB denotes the sample size of each group in each study.
+
+The MeanBaseline and sdBaseline denote the mean and standard deviation of Apnea scores among patients. The number represents the apnea/hypopnea events happened per hour. And the correlation denotes the correlation between the baseline and follow-up.
+
+In the clinical trials, the core is the measurement of the relationship between the treatment group and the control group (i.e. The effect size). The common used effect sizes are the unstandardized mean difference, the standardized mean difference and the response ratios. 
+
+
+## Methodology
+
+In this case, we perform the meta-analysis on the aggregate apnea data. In the pre-analysis step, we calculate the mean and standard deviation of the difference between the baseline and follow-up scores in each group in each study and mutate them to the new variables, the mean Change scores and the sd Change scores. We first perform the standard meta-analysis on the follow-up score, Change score. Next we apply Trowman method on the aggregate data. Then we reproduce analysis of the pseudo-IPD method in Papadimitropoulou's[@Papa] article. 
+
+For the standard meta-analysis, we apply the model fitting functions in the 'metafor' package. That is, When looking at the final score, the difference in mean final score between the two treatment arms is the effect measure. When we look at the change score, the mean difference between mean change score is the effect size.
+
+At the beginning we need to preprocess the aggregate data to calculate the mean and standard deviation of the change score in both group.[@change] After that, we construct the observed effect size and the sampling variances which are commonly used in meta-analysis. Then we fit hte random effect meta-analysis model on the final scores and change scores with estimation method 'REML'. Finally, we utilize the forest plot to curve the effect of the treatment in each trial and use the summary function to extract the essential values of the estimation. Additionally, the estimate effect, variance, and the confidence interval are listed simultaneously.
+
+The idea of Trowman method is straightforward. We apply linear regression on the change score of the aggregate data. 
+
+The final method bases on the simulation of the pseudo Individual participant data(IPD). We simulate the pseudo-IPD from the aggregate data which ensure the statistics that the mean, standard deviation, correlation, and sample size are identical with the aggregate data. That is, we can summarise the identical aggregate data from the pseudo-IPD. Then we apply meta-analysis on the pseudo-IPD directly by using the function 'lme'. And the setting of different variance structure is also discussed. 
+
+```{r,echo = FALSE}
+
+
+#Transform the data to a wide style.
+dat_agency <- data[data$group == 0,]
+
+names(dat_agency) <- paste0(names(dat_agency),'_',0)
+dat <- cbind(data[data$group == 1,],dat_agency)
+
+
+```
+
+```{r,include = FALSE}
+
+
+#Calculate the change values.
+dat$ChangeTreatment <- dat$MeanBaseline - dat$MeanPostBaseline
+
+dat$ChangeControl <- dat$MeanBaseline_0 - dat$MeanPostBaseline_0
+
+dat$ChangeSdTreatment <- sqrt((dat$sdBaseline)^2 + 
+                                (dat$sdPostBaseline)^2 - 
+                                2*dat$sdBaseline*dat$sdPostBaseline*dat$Correlation)
+
+dat$ChangeSdControl <- sqrt((dat$sdPostBaseline_0)^2 + 
+                              (dat$sdBaseline_0)^2 - 
+                              2*dat$sdPostBaseline_0*dat$sdBaseline_0*dat$Correlation_0)
+
+print(dat)
+
+
+```
+
+## Standard meta-analysis for follow-up and Change score
+
+First, We can use the \textit{rma} function directly by setting the arguments, means, sd's, and sample sizes which is corresponding with the measure 'MD', the raw mean difference. We fit the models with the follow-up score and change score as the outcome variable and name them \textcolor{blue}{The final model} and \textcolor{blue}{The change model} respectively.
+
+```{r,result = 'hide',echo=F}
+
+
+#Fit the random effect meta-analysis model. The final model and the Change model.
+meta_Follow <- escalc(measure = 'MD',
+                      m1i = MeanPostBaseline, m2i = MeanPostBaseline_0, 
+                      sd1i = sdPostBaseline, sd2i = sdPostBaseline_0, 
+                      n1i = NCFB, n2i = NCFB_0, data = dat)
+meta_Change <- escalc(measure = 'MD', 
+                      m1i = ChangeControl, m2i = ChangeTreatment,
+                      sd1i = ChangeSdControl, sd2i = ChangeSdTreatment,
+                      n1i = NCFB_0, n2i = NCFB, data = dat)
+
+
+resFollow <- rma(yi = yi, vi = vi, data = meta_Follow)#, test = 't')
+
+resChange <- rma(measure = 'MD', 
+                 m1i = ChangeControl, m2i = ChangeTreatment,
+                 sd1i = ChangeSdControl, sd2i = ChangeSdTreatment,
+                 n1i = NCFB_0, n2i = NCFB, data = dat)#, test = 't')
+
+
+```
+
+Then we curve the estimate models and interpret the results. The general estimation can acquire from the forest plot. The estimation values of the Change score model is
+
+```{r,echo = FALSE}
+
+
+#Make the forest plot to visualize the results.
+forest(resChange,slab = dat$Study,
+       xlab = paste('The effect size, weight, and confidence interval',
+                    '\n','with respect to each study are listed on the right side.'),
+       col = 2, addcred = T, 
+       showweights = T, header = T, width = 1, cex = .8,
+       main = 'The Forest plot of the Change scores model')
+
+
+```
+The lines with black points at the center are the description of the estimated effect size with the 95% confidence interval. The size of the black points denote the weight of the studies. The line at the bottom is the scale of all the measures in the plot. In the 'Study' column, the Studies' names are listed respectively. 
+On the right side, the first column is the exact weight of each study. The second column is the estimation of effect for each study. And the last column is composed by confidence interval of the estimation.
+
+The last row is the summary effect.
+
+We extract the information from the model summary.
+```{r, echo=FALSE}
+
+
+#List the estimate values of the change model.
+list(estimate = resChange$b, 
+     se = resChange$se,
+     ci.lb = resChange$ci.lb, 
+     ci.ub = resChange$ci.ub, 
+     tau_square = resChange$tau2)
+
+
+```
+
+1. The 'estimate' is the summary effect size of the model. From the estimation, the patients who received CPAP device treatment have approximately \textcolor{blue}{$45.52$} lower AHI than the patients treated by sham device. That is, the CPAP device can reduce in average $45.52$ times difficult-breathe events in an hour for the patients. The 'estimate' denotes the same meaning in the later models. 
+
+2. The 'se' value \textcolor{blue}{$5.29$} is the standard error of the summary effect size.
+
+3. The 'ci.ub', and 'ci.lb' are the estimation of confidence interval. The interval is \textcolor{blue}{$[-55.88, -35.16]$} which does not involve the $0$. Hence, we conclude that the CPAP device performs significantly better than the sham device in the treatment. And the range of the difference between two treatment effect is from approximately $35$ to $55$.
+
+4. The 'tau\_square' is the estimation of the random effect variance,which is \textcolor{blue}{$152.65$}
+
+
+
+
+The interpretation of the final score model is similar. The forest plot and estimation of the follow-up scores model is:
+
+```{r,echo = FALSE}
+
+
+#Identical with the change model. We apply the same execution to final model.
+forest(resFollow, slab = dat$Study, 
+       xlab = paste('Identical with the last plot. The right side is',
+                    '\n', 'the effect size, weight, and confidence interval respectively.'),       
+       col = 2, addcred = T, 
+       showweights = T, header = T, width = 1, cex = .8,
+       main = 'The forest plot of final scores model')
+
+list(estimate = resFollow$b, 
+     se = resFollow$se, 
+     ci.lb = resFollow$ci.lb, 
+     ci.ub = resFollow$ci.ub, 
+     tau_square = resFollow$tau2)
+
+
+```
+The results of the estimate are:
+
+1. The summary effect size is \textcolor{blue}{$-40.43$. }
+
+2. The standard error is \textcolor{blue}{$5.46$.}
+
+3. The confidence interval is \textcolor{blue}{$[-51.13,-29.73]$.}
+
+4. The random effect is \textcolor{blue}{$190.57$.}
+
+The summary effect sizes, standard errors, and the random effect are different between the change score model and final score model. Compare the included information, the change score model takes the baseline difference between groups in the studies into analysis, which varies the estimation.
+
+```{r,include=F}
+
+
+#This is a function for extracting information from the lme.
+#This function comes from Papadimitropoulou's code. 
+groupeffect <- function(results)
+{groupeff   <- summary(results)$tTable["group",]
+# Add 95% CI extracted fom nlme using t-distribution
+CI          <- intervals(results, which="fixed")
+df          <- data.frame(CI$fixed)
+names       <- c(names(groupeff),"95% CI lwb", "95% CI upb") 
+groupeff    <- c(groupeff, df["group",]$lower, df["group",]$upper)
+names(groupeff) <- names  
+print(groupeff)
+# Estimated tau2  
+tau2 <-  VarCorr((results)) [1,]
+print("Tau2 is")
+print(tau2)
+}
+
+
+```
+
+
+```{r}
+
+
+dat$sd_pooling_hat_baseline <- sqrt(((dat$NCFB - 1)*(dat$sdBaseline)^2 + (dat$NCFB_0 - 1)*(dat$sdBaseline_0)^2)/(dat$NCFB + dat$NCFB_0 - 2))
+dat$sd_pooling_hat_postbaseline <- sqrt(((dat$NCFB - 1)*(dat$sdPostBaseline)^2 + (dat$NCFB_0 - 1)*(dat$sdPostBaseline_0)^2)/(dat$NCFB + dat$NCFB_0 - 2))
+dat$rpooling <- with(dat, ((NCFB_0 - 1)*Correlation_0*sdBaseline_0*sdPostBaseline_0 + (NCFB - 1)*Correlation*sdBaseline*sdPostBaseline)/((NCFB + NCFB_0 - 2)*sd_pooling_hat_baseline*sd_pooling_hat_postbaseline))
+dat$beta_hat <- dat$rpooling*dat$sd_pooling_hat_postbaseline/dat$sd_pooling_hat_baseline
+
+dat$change_ANCOVA <- dat$MeanPostBaseline - dat$MeanPostBaseline_0 - (dat$MeanBaseline - dat$MeanBaseline_0)*dat$beta_hat
+
+dat$sdPostBaseline_ANCOVA <- sqrt(((dat$sd_pooling_hat_postbaseline)^2)*(1/dat$NCFB + 1/dat$NCFB_0)*(1 - dat$rpooling^2))
+
+resANCOVA <- rma(yi = change_ANCOVA, sei = sdPostBaseline_ANCOVA,# test = 't',
+                 data = dat,verbose=F, digits=5, control=list(maxiter=1000,stepadj=0.5))
+forest(resANCOVA, slab = dat$Study, 
+       xlab = paste('Identical with the last plot. The right side is',
+                    '\n', 'the effect size, weight, and confidence interval respectively.'),       
+       col = 2, addcred = T, 
+       showweights = T, header = T, width = 1, cex = 0.7,
+       main = 'The forest plot of Recovered ANCOVA model')
+```
+
+
+
+
+
+## Trowman
+
+\textcolor{blue}{Remark that Trowman is a form of meta regression}
+
+The traditional Trowman method [@Trowman] is applying the linear regression with \textcolor{blue}{the mean of the follow-up measurement in} as the dependent variable and \textcolor{blue}{the mean of the baseline measurements and the group indicator as independent variables}. The model is weighted by the sample size of each trial in each group. That is, each study provide two observations. 
+
+\par
+
+The core information of the Trowman model is extracted. 
+
+```{r,echo = FALSE}
+
+
+#Fit by lm and weight by size of each group.
+Trowman <- lm(MeanPostBaseline ~ group + MeanBaseline,
+              data = data, weights = NCFB)
+estimate = summary(Trowman)$coefficients['group','Estimate'] 
+     se = summary(Trowman)$coefficients['group','Std. Error']
+list(estimate = estimate, 
+     se = se,
+     ci.lb = estimate - 1.96*se,
+     ci.up = estimate + 1.96*se)
+#We have to  calculate the CI manually.  
+ 
+  
+```
+
+\par
+The Trowman model is a fixed effect model. 
+
+1. The estimate of the effect size is \textcolor{blue}{$-41.74$} which is in the range of the estimation of the final model and change model.
+
+2. The standard error is \textcolor{blue}{$4.76$.}
+
+3. The confidence interval is \textcolor{blue}{$[-51.06, -32.42]$}
+
+4. No random effect exist in the Trowman model. The method bases on the fixed linear regression model which regardless of the random elements.
+
+
+
+\newpage
+
+## Pseudo-IPD method
+
+### Generation
+
+\par
+
+From the Papadimitropoulou's literature[@Papa], the Generation process is: 
+
+1. Simulate two random samples from the standard normal distribution with the size equal to $n$, the size for each measure in each study. Denote them $Y^{*}_i1$ ($i = 1,...,n$) and $Y^{*}_i2$ ($i = 1,...,n$)
+
+2. Standardize the samples and calculate the correlation $r^{*}$ of the two samples.
+
+3. Fit the linear regression model by setting the $Y^{*}_{i2}$ as the dependent variable and $Y^{*}_{i1}$ as the independent variable. Denote the coefficients and residual as $\hat{\beta}$ and $\hat{\epsilon}$ respectively.
+
+4. Mutate a new variable $Y_{i 3}^{*}=Y_{i 1}^{*} r+\hat{\epsilon}_{i} \sqrt{1-r^{2}}{\left[\sqrt{1-r^{* 2}}\right]}^{-1}$, where $r$ denotes the true correlation in the studies.
+
+5. Generate $Y_{B i}=Y_{i 1}^{*} S d_{B}+\bar{Y}_{B}$ and $Y_{F i}=Y_{i 1}^{*} S d_{F}+\bar{Y}_{F}$. $Y_{B i}$ and $Y_{F i}$ are the pseudo-IPD we need.
+
+We follow Papadimitropoulou's method to simulate the pseudo-IPD and check the statistics of the pseudo-IPD. 
+
+```{r,include=F}
+
+
+#The simulation process of the pseudo IPD. 
+#We use the mean, standard deviation, correlation, and sample size
+#To simulate the pseudo data for each group in each study.
+Simulation_IPD <- function(meanB, sdB, meanF, sdF, Correlation, n,group,name){
+  Yi1 <- rnorm(n)
+  Yi2 <- rnorm(n)
+  Yi1 <- (Yi1 - mean(Yi1))/sd(Yi1)
+  Yi2 <- (Yi2 - mean(Yi2))/sd(Yi2)
+  r_star <- cor(Yi1,Yi2)
+  model <- lm(Yi2~Yi1)
+  beta_hat <- model$coefficient
+  residual_hat <- model$residual
+  Yi3 <- (Yi1 * Correlation) + residual_hat*sqrt(1-Correlation^2)/sqrt(1-r_star^2)
+  YBi <- Yi1*sdB + meanB
+  YFi <- Yi3*sdF + meanF
+  result <- data.frame(Baseline = YBi,
+                       
+                       Follow_up = YFi,
+                       group = group,
+                       Study = name,ID = 1:n)
+
+  return(result)
+}
+
+
+```
+
+
+```{r,include = F}
+
+
+#Apply the simulation function on the data. Name it 'pseudo_IPD'.
+pseudo_IPD <- NULL
+ntot <- nrow(data)
+for (i in 1:ntot) 
+{ pseudo_IPD <- rbind(pseudo_IPD,  
+        Simulation_IPD( meanB=data[i,'MeanBaseline'],
+             sdB=data[i,'sdBaseline'],
+             meanF= data[i,'MeanPostBaseline'], 
+             sdF = data[i,'sdPostBaseline'],
+             Correlation = data[i,'Correlation'],
+             n= data[i,'NCFB'],
+             group = data[i, 'group'],
+             name =data[i,'Study']))
+
+
+}
+# Center the Baseline and 'group'
+pseudo_IPD$MeanBaseline <- ave(pseudo_IPD$Baseline,pseudo_IPD$Study)
+pseudo_IPD$Baseline_centered <- pseudo_IPD$Baseline - pseudo_IPD$MeanBaseline
+pseudo_IPD$group_centered <- pseudo_IPD$group - 0.5
+
+
+```
+
+
+```{r,include = F}
+
+
+# Utilize the 'aggregate' function to extract the information of the pseudo IPD.
+# Check the mean and standard deviationof y1 and y2, and correlation y1, y2
+check <- cbind(aggregate(Baseline~group+Study, data=pseudo_IPD, mean), 
+              aggregate(Follow_up~group+Study, data=pseudo_IPD, mean)[3],
+              aggregate(Baseline~group+Study, data=pseudo_IPD, sd)[3],
+              aggregate(Follow_up~group+Study, data=pseudo_IPD, sd)[3],
+              aggregate(ID~group+Study, data = pseudo_IPD,max)[3],
+              as.vector(cbind(by(pseudo_IPD, pseudo_IPD[,c("group","Study")], 
+                                 function(x) {cor(x$Baseline,x$Follow_up)}))))
+
+
+```
+```{r,echo = FALSE}
+
+names(check) <- c('group',
+                  'Study', 
+                  'MeanBaseline',
+                  'MeanPostBaseline',
+                  'sdBaseline',
+                  'sdPostBaseline',
+                  'NCFB',
+                  'Correlation')
+
+
+head(check,6)
+
+
+```
+
+From the partial results, we can conclude that the mean, standard deviation, and the correlation are identical with the original aggregate data in table \ref{table:meta data}.
+
+```{r,echo = FALSE}
+
+
+#Since the dataset 'check' is identical with the aggregate data.
+#We use it in the standard meta-analysis.
+check_agency <- check[check$group == 0,]
+
+names(check_agency) <- paste0(names(check_agency),'_',0)
+check_dat <- cbind(check[check$group == 1,],check_agency)
+
+
+```
+
+```{r,include = FALSE}
+
+
+check_dat$ChangeTreatment <- 
+  check_dat$MeanBaseline - check_dat$MeanPostBaseline
+
+check_dat$ChangeControl <- 
+  check_dat$MeanBaseline_0 - check_dat$MeanPostBaseline_0
+
+check_dat$ChangeSdTreatment <- 
+  sqrt((check_dat$sdBaseline)^2 + (check_dat$sdPostBaseline)^2 - 
+         2*check_dat$sdBaseline*check_dat$sdPostBaseline*check_dat$Correlation)
+
+check_dat$ChangeSdControl <- 
+  sqrt((check_dat$sdPostBaseline_0)^2 + (check_dat$sdBaseline_0)^2 - 
+         2*check_dat$sdPostBaseline_0*check_dat$sdBaseline_0*check_dat$Correlation_0)
+print(check_dat)
+
+
+```
+
+
+```{r,echo = FALSE}
+
+# Center the 'group'
+pseudo_IPD$group_centered <- pseudo_IPD$group - 0.5
+
+```
+
+
+### Standard meta-analysis on the aggregate data of pseudo-IPD.
+
+
+
+Then we perform the standard meta-analysis on the pseudo-IPD as we did to the original aggregate data. First we aggregate the pseudo data, which we have already checked in the last section. Then we follow the same steps with the first Chapter. 
+
+First we perform the meta-analysis on the follow-up scores and change scores.
+
+```{r,echo = FALSE}
+
+
+meta_pseudo_Follow <- escalc(measure = 'MD', 
+                             m1i = MeanPostBaseline, 
+                             m2i = MeanPostBaseline_0, 
+                             sd1i = sdPostBaseline, 
+                             sd2i = sdPostBaseline_0, 
+                             n1i = NCFB, 
+                             n2i = NCFB_0, 
+                             data = check_dat)
+
+
+```
+
+```{r,echo = FALSE}
+
+meta_pseudo_change <- escalc(measure = 'MD', 
+                             m1i = ChangeControl, 
+                             m2i = ChangeTreatment, 
+                             sd1i = ChangeSdControl, 
+                             sd2i = ChangeSdTreatment, 
+                             n1i = NCFB_0, 
+                             n2i = NCFB, 
+                             data = check_dat)
+
+```
+```{r,echo = FALSE}
+
+resFollow.pseudo <- rma(yi = yi, vi = vi, data = meta_pseudo_Follow)
+
+resChange.pseudo <- rma(yi = yi, vi = vi, data = meta_pseudo_change)#,
+                        #knha = T)
+```
+```{r,echo = FALSE}
+forest(resChange.pseudo,slab = meta_pseudo_change$Study,
+       main = 'Forest plot of the change score model for pseudo-IPD',
+       xlab = 'The estimation is identical with the original data change score model',
+       col = 2, addcred = T, 
+       showweights = T, header = T, width = 1, cex = .8)
+#summary(resChange.pseudo)
+list(estimate = resChange.pseudo$b, 
+     se = resChange.pseudo$se, 
+     ci.lb = resChange.pseudo$ci.lb, 
+     ci.ub = resChange.pseudo$ci.ub, 
+     tau_square = resChange.pseudo$tau2)
+
+```
+
+```{r,echo = FALSE}
+
+forest(resFollow.pseudo,slab = meta_pseudo_Follow$Study, 
+       main = 'Forest plot of the final score model for pseudo-IPD',
+       xlab = 'The estimation is identical with the original data final score model',
+       col = 2, addcred = T, 
+       showweights = T, header = T, width = 1, cex = .8)
+#summary(resFollow.pseudo)
+list(estimate = resFollow.pseudo$b, 
+     se = resFollow.pseudo$se, 
+     ci.lb = resFollow.pseudo$ci.lb, 
+     ci.ub = resFollow.pseudo$ci.ub, 
+     tau_square = resFollow.pseudo$tau2)
+
+```
+
+The estimations are identical with the meta-analysis of the original aggregate data.
+
+We can conclude that the mean, standard deviation, group size and the correlation between the baseline and follow-up are the sufficient statistics of the standard meta-analysis. This is easy to interpret. We can calculate the mean difference by the mean at each time point. And we can calculate the standard deviation of the change score from the standard deviation of each time point and the correlation between them. Then we fit the random effect meta-analysis model by these statistics. Hence the meta-analysis results are fixed with respect to the sufficient statistics. 
+
+
+#### Meta-analysis by lme on the pseudo-IPD
+
+(1) For the model with both random intercept and slope, we fit with the follow-up scores as the dependent variable and use the single dependent variable, the 'group'. And we set the weights by the 'Study' variable which allow various variance among studies. That is, the variance of the random effects are various with respect to the Studies. We call it the \textcolor{blue}{Weighted Group Model}.
+
+```{r,echo = FALSE,warning = FALSE}
+
+#The weighted Group Model. We regardless the information from the Baseline.
+ctrl <- lmeControl(opt="optim", msMaxIter=100)
+model_base <- lme(Follow_up ~ group, data = pseudo_IPD, 
+                  random = ~-1 + group_centered|Study, 
+                  control = ctrl,
+                  weights = varIdent(form = ~1|Study))
+groupeffect(model_base)
+
+```
+
+
+
+1. The estimate effect size is \textcolor{blue}{$-40.64$.}
+
+2. The standard error is \textcolor{blue}{$5.20$.}
+
+3. The confidence interval is \textcolor{blue}{$[-50.87,-30.40]$.}
+
+4. The variance of random effect is \textcolor{blue}{$170.78$.}
+
+
+(2) Then we fit the model B6 in the Trowman literature[@Trowman]. The results are also identical with Papadimitropoulou's model. We name this model as the \textcolor{blue}{Full Model}. Then We centered the Baseline score with respect to the studies instead of the stratified groups within the studies since we assume that the baseline scores for the patients in both groups are from the same distribution within each study. This result is identical with Papadimitropoulou's literature[@Papa]. 
+
+
+```{r}
+pseudo_IPD$arm <- paste0(pseudo_IPD$Study, '_', pseudo_IPD$group)
+```
+
+
+```{r,echo = FALSE,warning = FALSE}
+
+#The Full model with the information of Baseline, Study, and group.
+model_1 <- lme(Follow_up ~ Baseline_centered*as.factor(Study) + group, 
+               data = pseudo_IPD,random = ~-1 + group_centered|Study, 
+               control = ctrl, 
+               weights = varIdent(form = ~1|Study))
+groupeffect(model_1)
+
+```
+
+```{r,echo = FALSE,warning = FALSE}
+
+#The Full model with the information of Baseline, Study, and group.
+model_1 <- lme(Follow_up ~ Baseline_centered*as.factor(Study)
+               + group, 
+               data = pseudo_IPD,random = ~-1 + group_centered|Study, 
+               control = ctrl, 
+               weights = varIdent(form = ~1|group))
+groupeffect(model_1)
+
+```
+
+
+```{r,echo = FALSE,warning = FALSE}
+
+#The Full model with the information of Baseline, Study, and group.
+model_1 <- lme(Follow_up ~ Baseline_centered*as.factor(Study)
+               + group, 
+               data = pseudo_IPD,random = ~-1 + group_centered|Study, 
+               control = ctrl)#, 
+               #weights = varIdent(form = ~1|Study))
+groupeffect(model_1)
+
+```
+
+
+
+```{r,echo = FALSE,warning = FALSE}
+
+#The Full model with the information of Baseline, Study, and group.
+model_1 <- lme(Follow_up ~ Baseline_centered*as.factor(Study)
+               + group, 
+               data = pseudo_IPD,random = ~-1 + group_centered|Study, 
+               control = ctrl, 
+               weights = varIdent(form = ~Study|arm))
+groupeffect(model_1)
+
+```
+
+1. The estimate effect size is \textcolor{blue}{$-42.41$.}
+
+2. The standard error is \textcolor{blue}{$5.23$.}
+
+3. The confidence interval is \textcolor{blue}{$[-52.70,-32.12]$.}
+
+4. The variance of random effect is \textcolor{blue}{$180.36$.}
+
+The mean, standard error and random effect are identical with Papadimitropoulou's literature[@Papa].
+
+```{r}
+model_1_int <- lme(Follow_up ~ Baseline_centered*as.factor(Study)
+               + group + Baseline_centered:group, 
+               data = pseudo_IPD, random = ~-1 + group_centered|Study, 
+               control = ctrl, 
+               weights = varIdent(form = ~1|Study))
+summary(model_1_int)
+```
+
+
+
+
+```{r}
+
+Studies <- unique(pseudo_IPD$Study)
+Two_stage_meta_analysis_data <- data.frame()
+for (name_meta in Studies){
+  data_study <- pseudo_IPD[pseudo_IPD$Study == name_meta,]
+  lm_study <- lm(Follow_up ~ Baseline + group, data = data_study)
+  record_study <- c(summary(lm_study)$coefficients['group', 'Estimate'],
+                    summary(lm_study)$coefficients['group', 'Std. Error']^2,
+                    nrow(data_study))
+  Two_stage_meta_analysis_data <- rbind(Two_stage_meta_analysis_data, record_study)
+}
+Two_stage_meta_analysis_data <- cbind(Two_stage_meta_analysis_data, Studies)
+names(Two_stage_meta_analysis_data) <- c('yi', 'vi', 'ni', 'studyi')
+
+
+```
+
+```{r}
+Two_stage_meta_analysis <- rma(yi = yi, vi = vi, slab = studyi,# weights = ni,# random = ~ 1|studyi,
+                                  data = Two_stage_meta_analysis_data,verbose=F, digits=5, 
+                                  control=list(maxiter=1000,stepadj=0.5))#,
+                                  #knha = T)
+```
+
+
+
+
+```{r}
+c(Two_stage_meta_analysis$b, 
+                                             Two_stage_meta_analysis$se, 
+                                             Two_stage_meta_analysis$ci.lb, 
+                                             Two_stage_meta_analysis$ci.ub, 
+                                            sqrt(Two_stage_meta_analysis$tau2), 
+                                            (Two_stage_meta_analysis$b - data.meta1$treatment)^2)
+```
+
+
+
+\newpage
+
+
+## Results and Discussion
+
+The main aim of the internship included acquiring the preknowledge, the meta-analysis theories and application, of the thesis. The thesis research aim is that assessing the performance of the various meta-analysis methods to find out the condition which method is preferred. The reproduce project provides a sight of the direction.
+
+We applied the standard meta-analysis by fitting the final model and the change model. Then we analysis the aggregate data with the linear regression. That is, the Trowman model. For the pseudo-IPD method, we fitted the weighted group model, and the full model B6 in Trowman's literature[@Trowman] respectively. The results of the models are comprised in table \ref{table:results}.
+
+\begin{table}[]
+\centering
+\begin{tabular}{lllll}
+\hline
+Models                & Estimate & SE   & CI                   & Random Effect \\
+Change Model         & -45.52   & 5.29 & {[}-55.88, -35.16{]} & 152.6494      \\
+Final Model          & -40.43   & 5.46 & {[}-51.13,-29.73{]}  & 190.57        \\
+Trowman Model        & -41.74   & 4.76 & {[}-51.06, -32.42{]} & NA            \\
+Weighted Group Model & -40.64   & 5.20 & {[}-50.87,-30.40{]}  & 170.78        \\
+Full Model           & -42.41   & 5.23 & {[}-52.70,-32.12{]}  & 180.36       \\
+\hline
+\end{tabular}
+\caption{The summary results of various models}
+\label{table:results}
+\end{table}
+
+Base on the standard methods, the pseudo-IPD methods, and the Trowman method we applied in the project, the estimations of the treatment effect are ranged from $-40.43$ to $-45.52$, which are relatively stable. Therefore, the pseudo-IPD method can provide a reasonable estimation of the effect size. The range of the standard deviations of the methods is from $4.67$ to $5.46$. And the random effect variance is various from $152.6$ to $190.6$. Hence, the stability of the methods are comparable. 
+
+From the standard meta-analysis methods, the random effect model of the change scores acquire smaller standard error and random effect than the final score model. As we take the Baseline score into the change score model analysis, we conclude that the Baseline score has impact on the treatment effect estimation. 
+
+The Trowman method bases on the linear model without random effect. And the smallest standard error among all methods is acquired ($4.67$ from this model.
+
+\newpage
+
+# Conclusion
+
+The main aim of the internship included acquiring the preknowledge, the meta-analysis theories and application, of the thesis. The thesis research aim is that assessing the performance of the various meta-analysis methods to find out the condition which method is preferred. The reproduce project provides a sight of the direction.
+
+The aggregate information of the pseudo-IPD is identical with the original aggregate data. We acquire the identical results by applied the standard meta-analysis methods. Instead of aggregating the IPD, the golden method is to perform meta regression of the IPD directly by using the linear regression tools. From the meta-regression of the pseudo-IPD models, the weighted group model acquires smaller standard deviation and random effect than the full model. The estimated treatment effect of both models is various with the standard methods. However, the estimate results are close and the performance is similar. Therefore, the pseudo-IPD methods can provide a reasonable estimation. In terms of the experience, the IPD can provide a better estimation than the aggregate data since the aggregate data covers only part of the patient information. We will explore where the pseudo-IPD can improve to restore more information of the original IPD in the thesis research.
+
+\par
+
+Base on the reproduce project, we can make a plan of the research direction of the thesis.
+
+1. The final model and the change model yield different results. The reason is that the final model does not take the impact of the Baseline score into account. We will explore the impact of the Baseline score by applying the methods on other dataset.
+
+2. The aggregate ANCOVA method is not checked in the project. We will perform the analysis in the thesis.
+
+3. The pseudo-IPD method bases on the normal simulation with respect to the aggregate information. We will explore alternative methods to acquire pseudo-IPD. And the compare the meta-analysis results with the other methods. 
+
+4. We will compare the methods and explore the conditions when they perform better. 
+
+\newpage
+
+
+
+
+
+
+# Appendix: All code for this report
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+
+```
+
+\newpage
+
+# REFERENCES
+
