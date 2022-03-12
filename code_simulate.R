@@ -11,12 +11,12 @@ ctrl <- lmeControl(opt="optim", msMaxIter=100)
 
 
 
-# example of a simulated meta analysis dataset
+
 library(tidyverse)
 library(copula)
 library(MASS)
 
-## Initialization and parameters 
+
 
 
 
@@ -24,8 +24,11 @@ library(MASS)
 set.seed(34532)
 
 
-# analyse as IPD, using a linear mixed model
-# analyse as AD, using finals scores, change scores, recover ANCOVA and Trowman
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Data Generation Machine  
+#----------------------------------------------------------------------------------------------------------------------------
+
+
 
 Simulation <- function(nstudy = 6, ngroup = as.data.frame(matrix(data = replicate(nstudy, 10), 
                                                                  nrow = nstudy, ncol = 2)), 
@@ -124,7 +127,9 @@ Simulation <- function(nstudy = 6, ngroup = as.data.frame(matrix(data = replicat
 
 
 
-
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Perform meta-analysis models based on the original data
+#----------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -502,7 +507,7 @@ model_original_results <- groupeffect(model_original)
 results_list['original full model',] <- c(model_original_results[c(1,2,6,7,9)], 
                                           (model_original_results[1] - data.meta1$treatment)^2)
 
-print(results_list['original full model',] - results_list['pseudo full model',])
+#print(results_list['original full model',] - results_list['pseudo full model',])
 
 Studies <- unique(pseudo_IPD$Study)
 Two_stage_meta_analysis_data <- data.frame()
@@ -536,13 +541,24 @@ return(list(true_value = data.meta1$treatment,
             results = results_list))
 }
 
-
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Parameters tuning: We can vary the parameters globally  
+#----------------------------------------------------------------------------------------------------------------------------
 
 nstudy_exp <- 8
 ngroup_exp <- 20
 residual_exp <- replicate(nstudy_exp,c(16,4))
 sd_baseline_exp <- 20
 imbalance_exp <- 5
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Prepare the blank data.frames to storage the simulation results
+#----------------------------------------------------------------------------------------------------------------------------
+
+
+
 ## 
 correlation_various_results <- vector(mode = 'list')
 mean_baseline_results <- vector(mode = 'list')
@@ -671,6 +687,15 @@ names(Pseudo_Two_Stage_modelaggregate_sd) <- Assess_Range
 Original_Full_modelaggregate_sd <- as.data.frame(matrix(NA, nrow = Repeat_times, ncol = length(Assess_Range)))
 names(Original_Full_modelaggregate_sd) <- Assess_Range
 
+
+#----------------------------------------------------------------------------------------------------------------------------
+#                       The main simulation experiment: We generate the original IPD and aggregate to the AD
+#                       Then fit the meta-analysis models.
+#----------------------------------------------------------------------------------------------------------------------------
+
+
+
+
 for (item in 1:Repeat_times){
 for (treatment_effect in Assess_Range){
 
@@ -761,6 +786,13 @@ treatment_effect_results[[paste0('treatment_effect = ',treatment_effect)]] <- re
   }
   
 }
+
+
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Visualize the errors trend between models
+#                       Visualize the estimates distribution with boxplot
+#----------------------------------------------------------------------------------------------------------------------------
+
 
 par(mfrow = c(1,1))
 estimation_results <- vector(mode = 'list')
@@ -1075,6 +1107,13 @@ for (treatment in Assess_Range){
     Original_Full_Sd_Per_simulation_sd[[paste0(treatment)]]
   
 }
+
+
+#----------------------------------------------------------------------------------------------------------------------------
+#                        The summary results 
+#----------------------------------------------------------------------------------------------------------------------------
+
+
 results_treatments_final <- vector(mode = 'list')
 for (i in 1:length(results_treatments)){
   results_treatments_final[[paste0('treatment_effect = ', Assess_Range[i])]] <- 
@@ -1087,10 +1126,6 @@ for (i in 1:length(results_treatments)){
 
 
 
-##### treatment effect big and small.
-##### baseline effect 0 to 1.
-##### Tau big and small.
-##### baseline imbalance.
 
 
 
@@ -1103,12 +1138,13 @@ for (i in 1:length(results_treatments)){
 
 
 
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Prepare the blank data.frames to storage the simulation results for 
+#                       the experiment with different baseline effect
+#----------------------------------------------------------------------------------------------------------------------------
 
 
 
-
-
-##############################For the various baseline
 
 
 
@@ -1215,7 +1251,15 @@ names(Baseline_Pseudo_Full_modelaggregate_sd) <- Assess_Range_Baseline
 
 Baseline_Pseudo_Two_Stage_modelaggregate_sd <- as.data.frame(matrix(NA, nrow = Repeat_times_Baseline, ncol = length(Assess_Range_Baseline)))
 names(Baseline_Pseudo_Two_Stage_modelaggregate_sd) <- Assess_Range_Baseline
-#Simulation Process
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------
+#                       The different baseline effect experiment. We can set the test baseline by 
+#                       changing the 'Assess_range_Baseline'
+#----------------------------------------------------------------------------------------------------------------------------
+
+
 
 for (item in 1:Repeat_times_Baseline){
   for (baseline_effect in Assess_Range_Baseline){
@@ -1577,8 +1621,11 @@ for (i in 1:length(results_baselines)){
 
 
 
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Visualize the errors trend between models
+#                       Visualize the estimates distribution with boxplot
+#----------------------------------------------------------------------------------------------------------------------------
 
-################################################################MSE of various methods.
 
 
 
@@ -1689,12 +1736,6 @@ par(mfrow = c(1,1))
 
 
 
-#write.csv(results_baselines_final$`baseline_effect = -2`, file = 'C:/books_and_notes/internship and thesis/output of the simulation/Baseline_effect = -2.csv')
-#write.csv(results_baselines_final$`baseline_effect = 0`, file = 'C:/books_and_notes/internship and thesis/output of the simulation/Baseline_effect = 0.csv')
-#write.csv(results_baselines_final$`baseline_effect = 2`, file = 'C:/books_and_notes/internship and thesis/output of the simulation/Baseline_effect = 2.csv')
-#write.csv(results_treatments_final$`treatment_effect = 0`, file = 'C:/books_and_notes/internship and thesis/output of the simulation/treatment_effect = 0.csv')
-#write.csv(results_treatments_final$`treatment_effect = 20`, file = 'C:/books_and_notes/internship and thesis/output of the simulation/treatment_effect = 20.csv')
-#write.csv(results_treatments_final$`treatment_effect = 40`, file = 'C:/books_and_notes/internship and thesis/output of the simulation/treatment_effect = 40.csv')
 
 
 
@@ -1704,8 +1745,12 @@ par(mfrow = c(1,1))
 
 
 
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Prepare the blank data.frames to storage the simulation results for 
+#                       the experiment with different random effect
+#----------------------------------------------------------------------------------------------------------------------------
 
-#######Experiment for various tau:
+
 
 correlation_various_results <- vector(mode = 'list')
 mean_baseline_results <- vector(mode = 'list')
@@ -1820,6 +1865,14 @@ names(Tau_Pseudo_Full_modelaggregate_sd) <- Assess_Range_Tau
 
 Tau_Pseudo_Two_Stage_modelaggregate_sd <- as.data.frame(matrix(NA, nrow = Repeat_times, ncol = length(Assess_Range_Tau)))
 names(Tau_Pseudo_Two_Stage_modelaggregate_sd) <- Assess_Range_Tau
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------
+#                       The different random effect experiment: 
+#                       Change 'Assess_Range_Tau' to set the tested random effect 
+#----------------------------------------------------------------------------------------------------------------------------
+
 
 
 for (item in 1:Repeat_times){
@@ -2178,6 +2231,14 @@ for (i in 1:length(results_taus)){
   names(results_taus_final[[paste0('tau_effect = ', Assess_Range_Tau[i])]]) <- 
     c('estimation', 'sd', 'tau', 'error', 'estimation_sd', 'sd_sd', 'tau_sd', 'error_sd')
 }
+
+
+#----------------------------------------------------------------------------------------------------------------------------
+#                       Visualize the errors trend between models
+#                       Visualize the estimates distribution with boxplot
+#----------------------------------------------------------------------------------------------------------------------------
+
+
 
 par(mfrow = c(3,2))
 Tau_estimation_results <- vector(mode = 'list')
